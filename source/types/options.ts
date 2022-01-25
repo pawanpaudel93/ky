@@ -1,6 +1,6 @@
-import type {LiteralUnion, Required} from './common.js';
-import type {Hooks} from './hooks.js';
-import type {RetryOptions} from './retry.js';
+import type { LiteralUnion, Required } from './common.js';
+import type { Hooks } from './hooks.js';
+import type { RetryOptions } from './retry.js';
 
 // eslint-disable-next-line unicorn/prevent-abbreviations
 export type SearchParamsInit = string | string[][] | Record<string, string> | URLSearchParams | undefined;
@@ -130,6 +130,7 @@ export interface Options extends Omit<RequestInit, 'headers'> {
 	```
 	*/
 	prefixUrl?: URL | string;
+	retryPrefixUrl?: URL | string;
 
 	/**
 	An object representing `limit`, `methods`, `statusCodes` and `maxRetryAfter` fields for maximum retry count, allowed methods, allowed status codes and maximum [`Retry-After`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After) time.
@@ -224,13 +225,14 @@ export interface Options extends Omit<RequestInit, 'headers'> {
 }
 
 export type InternalOptions = Required<
-// eslint-disable-next-line @typescript-eslint/ban-types
-Omit<Options, 'hooks' | 'retry'>,
-'credentials' | 'fetch' | 'prefixUrl' | 'timeout'
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	Omit<Options, 'hooks' | 'retry'>,
+	'credentials' | 'fetch' | 'prefixUrl' | 'timeout'
 > & {
 	hooks: Required<Hooks>;
 	retry: Required<RetryOptions>;
 	prefixUrl: string;
+	retryPrefixUrl?: URL | string;
 };
 
 /**
@@ -245,6 +247,7 @@ export interface NormalizedOptions extends RequestInit {
 	retry: RetryOptions;
 	prefixUrl: string;
 	onDownloadProgress: Options['onDownloadProgress'];
+	retryPrefixUrl?: URL | string;
 }
 
-export {RetryOptions};
+export { RetryOptions };

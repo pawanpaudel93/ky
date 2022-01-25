@@ -1,13 +1,13 @@
-import {HTTPError} from '../errors/HTTPError.js';
-import {TimeoutError} from '../errors/TimeoutError.js';
-import type {Hooks} from '../types/hooks.js';
-import type {Input, InternalOptions, NormalizedOptions, Options, SearchParamsInit} from '../types/options.js';
-import {ResponsePromise} from '../types/response.js';
-import {deepMerge, mergeHeaders} from '../utils/merge.js';
-import {normalizeRequestMethod, normalizeRetryOptions} from '../utils/normalize.js';
-import {delay, timeout, TimeoutOptions} from '../utils/time.js';
-import {ObjectEntries} from '../utils/types.js';
-import {maxSafeTimeout, responseTypes, stop, supportsAbortController, supportsFormData, supportsStreams} from './constants.js';
+import { HTTPError } from '../errors/HTTPError.js';
+import { TimeoutError } from '../errors/TimeoutError.js';
+import type { Hooks } from '../types/hooks.js';
+import type { Input, InternalOptions, NormalizedOptions, Options, SearchParamsInit } from '../types/options.js';
+import { ResponsePromise } from '../types/response.js';
+import { deepMerge, mergeHeaders } from '../utils/merge.js';
+import { normalizeRequestMethod, normalizeRetryOptions } from '../utils/normalize.js';
+import { delay, timeout, TimeoutOptions } from '../utils/time.js';
+import { ObjectEntries } from '../utils/types.js';
+import { maxSafeTimeout, responseTypes, stop, supportsAbortController, supportsFormData, supportsStreams } from './constants.js';
 
 export class Ky {
 	// eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -111,6 +111,7 @@ export class Ky {
 			method: normalizeRequestMethod(options.method ?? (this._input as Request).method),
 			// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
 			prefixUrl: String(options.prefixUrl || ''),
+			retryPrefixUrl: String(options.retryPrefixUrl ?? ''),
 			retry: normalizeRetryOptions(options.retry),
 			throwHttpErrors: options.throwHttpErrors !== false,
 			timeout: typeof options.timeout === 'undefined' ? 10_000 : options.timeout,
@@ -158,7 +159,7 @@ export class Ky {
 			// To provide correct form boundary, Content-Type header should be deleted each time when new Request instantiated from another one
 			if (
 				((supportsFormData && this._options.body instanceof globalThis.FormData)
-				|| this._options.body instanceof URLSearchParams) && !(this._options.headers && (this._options.headers as Record<string, string>)['content-type'])
+					|| this._options.body instanceof URLSearchParams) && !(this._options.headers && (this._options.headers as Record<string, string>)['content-type'])
 			) {
 				this.request.headers.delete('content-type');
 			}
@@ -169,7 +170,7 @@ export class Ky {
 		if (this._options.json !== undefined) {
 			this._options.body = JSON.stringify(this._options.json);
 			this.request.headers.set('content-type', 'application/json');
-			this.request = new globalThis.Request(this.request, {body: this._options.body});
+			this.request = new globalThis.Request(this.request, { body: this._options.body });
 		}
 	}
 
@@ -241,6 +242,17 @@ export class Ky {
 						return;
 					}
 				}
+				if (
+					this._options.retryPrefixUrl && this._options.prefixUrl &&
+					typeof this._options.prefixUrl === 'string' &&
+					typeof this._options.retryPrefixUrl === 'string') {
+					this.request = new globalThis.Request(
+						new globalThis.Request(
+							this.request.url.indexOf(this._options.prefixUrl) > -1 ?
+								this.request.url.replace(this._options.prefixUrl, this._options.retryPrefixUrl) : this.request.url, this.request),
+						this._options as RequestInit
+					);
+				}
 
 				return this._retry(fn);
 			}
@@ -282,11 +294,11 @@ export class Ky {
 					const reader = response.body!.getReader();
 
 					if (onDownloadProgress) {
-						onDownloadProgress({percent: 0, transferredBytes: 0, totalBytes}, new Uint8Array());
+						onDownloadProgress({ percent: 0, transferredBytes: 0, totalBytes }, new Uint8Array());
 					}
 
 					async function read() {
-						const {done, value} = await reader.read();
+						const { done, value } = await reader.read();
 						if (done) {
 							controller.close();
 							return;
@@ -295,7 +307,7 @@ export class Ky {
 						if (onDownloadProgress) {
 							transferredBytes += value!.byteLength;
 							const percent = totalBytes === 0 ? 0 : transferredBytes / totalBytes;
-							onDownloadProgress({percent, transferredBytes, totalBytes}, value!);
+							onDownloadProgress({ percent, transferredBytes, totalBytes }, value!);
 						}
 
 						controller.enqueue(value!);
