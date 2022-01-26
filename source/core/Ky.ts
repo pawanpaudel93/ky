@@ -248,10 +248,12 @@ export class Ky {
 					typeof this._options.retryPrefixUrl === 'string') {
 					this.request = new globalThis.Request(
 						new globalThis.Request(
-							this.request.url.indexOf(this._options.prefixUrl) > -1 ?
-								this.request.url.replace(this._options.prefixUrl, this._options.retryPrefixUrl) : this.request.url, this.request),
+							this.request.url.indexOf(this._options.prefixUrl) > -1
+								? this.request.url.replace(this._options.prefixUrl, this._options.retryPrefixUrl)
+								: this.request.url.replace(this._options.retryPrefixUrl, this._options.prefixUrl), this.request
+						),
 						this._options as RequestInit
-					);
+					)
 				}
 
 				return this._retry(fn);
